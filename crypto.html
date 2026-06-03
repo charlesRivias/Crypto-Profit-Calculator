@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Futures Calculator · P&L Ledger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --bg: #f5f7fa;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --panel-bg: #0b1120;
+            --panel-text: #f8fafc;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --table-header: #f8fafc;
+            --table-border: #e2e8f0;
+            --hover-row: #f1f5f9;
+            --btn-bg: #ffffff;
+            --btn-border: #cbd5e1;
+            --btn-text: #1e293b;
+            --profit-positive: #4caf50;
+            --profit-negative: #dc2626;
+            --delete-hover: #fee2e2;
+            --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02);
+            --border-radius: 12px;
+        }
+        body.dark {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --border: #333333;
+            --text-primary: #f0f0f0;
+            --text-secondary: #a0a0a0;
+            --text-muted: #888888;
+            --panel-bg: #000000;
+            --panel-text: #ffffff;
+            --input-bg: #0a0a0a;
+            --input-border: #444444;
+            --table-header: #0a0a0a;
+            --table-border: #333333;
+            --hover-row: #1a1a1a;
+            --btn-bg: #0a0a0a;
+            --btn-border: #444444;
+            --btn-text: #e0e0e0;
+            --profit-positive: #4caf50;
+            --profit-negative: #f87171;
+            --delete-hover: #3b1a1a;
+            --shadow: 0 2px 8px rgba(255,255,255,0.02);
+        }
+        body {
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            color: var(--text-primary);
+            margin: 0;
+            transition: background 0.2s;
+        }
+        .calculator {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 20px 18px;
+            border: 1px solid var(--border);
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        #brandLogo {
+            height: 36px;
+            width: auto;
+            max-width: 100px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        .logo-fallback {
+            font-size: 1.7rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .notes-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 16px;
+        }
+        .notes-box label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .notes-box input {
+            width: 200px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+        .theme-toggle {
+            background: var(--btn-bg);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .base-balance-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+            background: var(--surface);
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        .base-balance-row label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .base-balance-row input {
+            width: 130px;
+            padding: 10px 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            text-align: right;
+        }
+        .toman-toggle-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-switch input {
+            display: none;
+        }
+        .toggle-slider {
+            width: 40px;
+            height: 20px;
+            background: var(--input-border);
+            border-radius: 20px;
+            position: relative;
+            transition: 0.2s;
+        }
+        .toggle-slider::after {
+            content: "";
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: 0.2s;
+        }
+        input:checked+.toggle-slider {
+            background: #3b82f6;
+        }
+        input:checked+.toggle-slider::after {
+            left: 22px;
+        }
+        .toman-rate-input {
+            width: 110px;
+            padding: 8px 10px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .update-rate-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .current-balance-display {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        .balance-panel {
+            background: var(--panel-bg);
+            padding: 20px 18px;
+            border-radius: var(--border-radius);
+            margin: 16px 0 8px 0;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            transition: transform 0.1s ease, box-shadow 0.2s;
+        }
+        .balance-panel.animate {
+            transform: scale(1.01);
+            box-shadow: 0 0 0 2px var(--profit-positive);
+        }
+        .balance-main {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+        .balance-label {
+            color: #9ca3af;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+        .balance-values {
+            text-align: right;
+        }
+        .balance-value {
+            color: var(--panel-text);
+            font-weight: 700;
+            font-size: 2.8rem;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .balance-toman {
+            color: #9ca3af;
+            font-size: 1rem;
+            margin-top: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .net-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+            margin-bottom: 20px;
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            align-items: center;
+        }
+        .net-stats span {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        .stats-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .sim-button {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+        .input-card {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 20px 18px;
+            border: 1px solid var(--border);
+            margin-bottom: 28px;
+        }
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .input-group {
+            flex: 1 1 180px;
+            min-width: 140px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .input-with-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-with-toggle input {
+            flex: 1;
+            padding: 12px 8px;
+            font-size: 1rem;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+        }
+        .sign-toggle {
+            background: var(--btn-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            min-width: 48px;
+            text-align: center;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 12px;
+            font-size: 1rem;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .preset-manager {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+        .preset-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .preset-chip {
+            display: flex;
+            align-items: center;
+            background: var(--btn-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 30px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: background 0.1s;
+            white-space: nowrap;
+        }
+        .preset-chip:hover {
+            background: var(--hover-row);
+        }
+        .preset-chip .remove-preset {
+            margin-left: 6px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0 2px;
+            line-height: 1;
+        }
+        .preset-chip .remove-preset:hover {
+            color: var(--profit-negative);
+        }
+        .add-preset {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .add-preset input {
+            width: 70px;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            border: 1px solid var(--input-border);
+            border-radius: 30px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            text-align: center;
+        }
+        .add-preset-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .auto-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            margin-top: 8px;
+            color: var(--text-secondary);
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            padding: 12px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            color: var(--btn-text);
+            transition: background 0.15s, border 0.15s;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        .btn-primary {
+            background: #0f172a;
+            border-color: #0f172a;
+            color: white;
+        }
+        body.dark .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: black;
+        }
+        .btn-primary:hover {
+            opacity: 0.85;
+        }
+        .btn-outline:hover {
+            background: var(--hover-row);
+        }
+        .btn-sim {
+            background: var(--profit-positive);
+            border-color: var(--profit-positive);
+            color: black;
+        }
+        body.dark .btn-sim {
+            background: #4caf50;
+            border-color: #4caf50;
+            color: black;
+        }
+        .btn-chart {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        body.dark .btn-chart {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: black;
+        }
+        .file-import {
+            display: none;
+        }
+        .export-filename {
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background: var(--input-bg);
+            color: var(--text-primary);
+            width: 160px;
+            margin-right: 8px;
+        }
+        .positions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0 12px 0;
+        }
+        .positions-header h2 {
+            font-weight: 600;
+            font-size: 1.4rem;
+            color: var(--text-primary);
+        }
+        .table-wrapper {
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        th {
+            text-align: left;
+            padding: 14px 10px;
+            background: var(--table-header);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+        .profit-positive { color: var(--profit-positive); font-weight: 600; }
+        .profit-negative { color: var(--profit-negative); font-weight: 600; }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 20px;
+            line-height: 1;
+            touch-action: manipulation;
+        }
+        .delete-btn:hover {
+            background: var(--delete-hover);
+            color: var(--profit-negative);
+        }
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        .footer-note {
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .leverage-badge {
+            background: var(--hover-row);
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+        @media (max-width: 600px) {
+            body { padding: 4px; }
+            .calculator { padding: 14px 8px; border-radius: 8px; }
+            .balance-value { font-size: 2rem; }
+            .input-group { flex: 1 1 100%; min-width: auto; }
+            .btn { padding: 14px 18px; width: 100%; text-align: center; }
+            .button-group { flex-direction: column; }
+            .button-group .btn { flex: none; }
+            .top-bar { flex-direction: column; align-items: flex-start; }
+            .theme-toggle { align-self: flex-end; }
+            .base-balance-row { flex-direction: column; align-items: flex-start; }
+            .toman-toggle-area { margin-left: 0; width: 100%; justify-content: space-between; flex-wrap: wrap; }
+            .current-balance-display { margin-left: 0; }
+            .sim-button { margin-left: 0; width: 100%; justify-content: flex-start; }
+            .net-stats { flex-direction: column; align-items: flex-start; }
+            .notes-box { margin-left: 0; width: 100%; }
+            .export-filename { width: 100%; margin-right: 0; margin-bottom: 8px; }
+            .btn-export-wrapper { display: flex; flex-direction: column; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="top-bar">
+            <div class="logo-area">
+                <a href="index.html" class="btn btn-outline" style="margin-right:12px; text-decoration:none;">🏠 Home</a>
+                <img src="logo.png" alt="Logo" id="brandLogo" onerror="this.style.display='none'; document.getElementById('fallbackLogo').style.display='block';">
+                <div id="fallbackLogo" class="logo-fallback">📊 FuturesCalculator</div>
+                <div class="notes-box">
+                    <label>📝 Notes:</label>
+                    <input type="text" id="notesInput" placeholder="strategy, reminders...">
+                </div>
+            </div>
+            <div class="theme-toggle" id="themeToggle">
+                <span>☀️</span><span>Dark / Light</span><span>🌙</span>
+            </div>
+        </div>
+
+        <div class="base-balance-row">
+            <label>💰 Starting Balance ($)</label>
+            <input type="number" id="baseBalanceInput" value="64.00" step="0.01" min="0">
+            <div class="toman-toggle-area">
+                <label class="toggle-switch"><span>💱 Toman</span><input type="checkbox" id="tomanToggle"><span class="toggle-slider"></span></label>
+                <input type="number" id="tomanRateInput" class="toman-rate-input" value="50000" step="1" min="1" placeholder="Rate" style="display:none;">
+                <button class="update-rate-btn" id="updateRateBtn">↻ Update Rate</button>
+            </div>
+            <span class="current-balance-display" id="baseDisplayLabel">Base: $64.00</span>
+        </div>
+
+        <div class="balance-panel" id="balancePanel">
+            <div class="balance-main">
+                <span class="balance-label">Current Balance</span>
+                <div class="balance-values">
+                    <div class="balance-value" id="balanceDisplay">$64.00</div>
+                    <div class="balance-toman" id="balanceTomanDisplay" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="net-stats">
+            <div class="stats-group">
+                <div>Net P&L: <span id="netPnLDisplay">$0.00</span></div>
+                <div>Total %: <span id="netPercentDisplay">0.00%</span></div>
+                <div>Market % Taken: <span id="marketPercentDisplay">0.00%</span></div>
+                <div>Trades: <span id="totalTradesDisplay">0</span></div>
+                <div>Wins: <span id="winsDisplay">0</span></div>
+                <div>Losses: <span id="lossesDisplay">0</span></div>
+                <div>Win Rate: <span id="winRateDisplay">0%</span></div>
+            </div>
+            <div class="sim-button">
+                <button class="btn btn-sim" id="winRateSimBtn">📈 WinRate Sim</button>
+                <button class="btn btn-chart" id="chartBtn">📊 Trade Chart</button>
+            </div>
+        </div>
+
+        <div class="input-card">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>💰 Trade amount ($)</label>
+                    <input type="number" id="tradeAmount" value="32" step="0.01" min="0.01">
+                    <div class="auto-toggle">
+                        <input type="checkbox" id="autoPercentToggle">
+                        <span>Auto 60% of balance</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>🔢 # of positions</label>
+                    <input type="number" id="tradeCount" value="1" step="1" min="1">
+                </div>
+                <div class="input-group">
+                    <label>📈 Gain / Loss (%)</label>
+                    <div class="input-with-toggle">
+                        <input type="number" id="tradePercent" value="0" step="0.01" placeholder="0">
+                        <button class="sign-toggle" id="signToggleBtn">+/-</button>
+                    </div>
+                    <div class="preset-manager">
+                        <div class="preset-list" id="presetListContainer"></div>
+                        <div class="add-preset">
+                            <input type="number" id="newPresetInput" step="0.01" placeholder="e.g. 2.5">
+                            <button class="add-preset-btn" id="addPresetBtn">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>⚡ Leverage</label>
+                    <input type="number" id="tradeLeverage" value="1" step="0.1" min="0.1">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" id="addTradeBtn">➕ Add position(s)</button>
+                <button class="btn btn-outline" id="resetTradesBtn">🔄 Reset trades</button>
+                <div class="btn-export-wrapper" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="exportFilenameInput" class="export-filename" placeholder="futures_backup.json" value="futures_backup.json">
+                    <button class="btn btn-outline" id="exportBtn">💾 Export</button>
+                </div>
+                <button class="btn btn-outline" id="importBtn">📂 Import</button>
+                <input type="file" id="importFile" class="file-import" accept=".json">
+            </div>
+            <div style="font-size:0.8rem; margin-top:12px; color: var(--text-muted);">
+                📊 Each position recorded separately. Leverage multiplies P&L.<br>
+                💾 Data auto‑saved to browser. Use Export/Import to transfer.
+            </div>
+        </div>
+
+        <div class="positions-header">
+            <h2>📋 Trade history</h2>
+            <button class="btn btn-outline" id="clearAllBtn">Clear list</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="positionsTable">
+                <thead><tr><th>#</th><th>Amount ($)</th><th>Change (%)</th><th>Lev</th><th>P/L ($)</th><th>Balance After</th><th style="width:40px;"></th></tr></thead>
+                <tbody id="tableBody"><tr><td colspan="7" class="empty-message">No trades added. Add your first position.</td></tr></tbody>
+            </table>
+        </div>
+        <div class="footer-note">
+            <span>📌 Each row = separate position</span>
+            <span>🧮 Balance = Base + sum of all P&L</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const STORAGE_KEY = 'futuresCalcData';
+            let baseBalance = 64;
+            let trades = [];
+            let tomanEnabled = false,
+                tomanRate = 50000;
+            let autoPercentEnabled = false;
+            let percentPresets = [],
+                userNotes = '';
+
+            const fmt = v => '$' + v.toFixed(2);
+            const fmtToman = v => new Intl.NumberFormat('en-US').format(Math.round(v)) + ' Toman';
+            const totalProfit = () => trades.reduce((s, t) => s + t.profit, 0);
+            const currentBalance = () => baseBalance + totalProfit();
+            const netPercent = () => baseBalance ? (totalProfit() / baseBalance) * 100 : 0;
+            const marketPercent = () => trades.reduce((s, t) => s + t.percent, 0);
+            const getStats = () => {
+                const wins = trades.filter(t => t.profit > 0).length;
+                const losses = trades.filter(t => t.profit < 0).length;
+                return { total: trades.length, wins, losses, winRate: trades.length ? (wins / trades.length) * 100 : 0 };
+            };
+
+            const balanceDisplay = document.getElementById('balanceDisplay');
+            const balanceTomanDisplay = document.getElementById('balanceTomanDisplay');
+            const balancePanel = document.getElementById('balancePanel');
+            const tableBody = document.getElementById('tableBody');
+            const baseBalanceInput = document.getElementById('baseBalanceInput');
+            const baseDisplayLabel = document.getElementById('baseDisplayLabel');
+            const tradeAmountInput = document.getElementById('tradeAmount');
+            const tradeCountInput = document.getElementById('tradeCount');
+            const tradePercentInput = document.getElementById('tradePercent');
+            const tradeLeverageInput = document.getElementById('tradeLeverage');
+            const signToggleBtn = document.getElementById('signToggleBtn');
+            const addBtn = document.getElementById('addTradeBtn');
+            const resetTradesBtn = document.getElementById('resetTradesBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const themeToggle = document.getElementById('themeToggle');
+            const tomanToggle = document.getElementById('tomanToggle');
+            const tomanRateInput = document.getElementById('tomanRateInput');
+            const updateRateBtn = document.getElementById('updateRateBtn');
+            const netPnLDisplay = document.getElementById('netPnLDisplay');
+            const netPercentDisplay = document.getElementById('netPercentDisplay');
+            const marketPercentDisplay = document.getElementById('marketPercentDisplay');
+            const totalTradesDisplay = document.getElementById('totalTradesDisplay');
+            const winsDisplay = document.getElementById('winsDisplay');
+            const lossesDisplay = document.getElementById('lossesDisplay');
+            const winRateDisplay = document.getElementById('winRateDisplay');
+            const winRateSimBtn = document.getElementById('winRateSimBtn');
+            const chartBtn = document.getElementById('chartBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const importFile = document.getElementById('importFile');
+            const autoPercentToggle = document.getElementById('autoPercentToggle');
+            const presetListContainer = document.getElementById('presetListContainer');
+            const newPresetInput = document.getElementById('newPresetInput');
+            const addPresetBtn = document.getElementById('addPresetBtn');
+            const notesInput = document.getElementById('notesInput');
+            const exportFilenameInput = document.getElementById('exportFilenameInput');
+
+            function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ baseBalance, trades, percentPresets, tomanEnabled, tomanRate, userNotes })); }
+
+            function load() {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                try {
+                    const d = JSON.parse(raw);
+                    baseBalance = d.baseBalance || 64;
+                    trades = d.trades || [];
+                    percentPresets = d.percentPresets || [];
+                    tomanEnabled = d.tomanEnabled || false;
+                    tomanRate = d.tomanRate || 50000;
+                    userNotes = d.userNotes || '';
+                } catch {}
+            }
+
+            function exportFile() {
+                const filename = exportFilenameInput.value.trim() || 'futures_backup.json';
+                const blob = new Blob([JSON.stringify({ baseBalance, trades, percentPresets, tomanEnabled, tomanRate, userNotes }, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+
+            function importFileHandler(file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const d = JSON.parse(e.target.result);
+                        if (d.baseBalance !== undefined && Array.isArray(d.trades)) {
+                            baseBalance = d.baseBalance;
+                            trades = d.trades;
+                            percentPresets = d.percentPresets || [];
+                            tomanEnabled = d.tomanEnabled || false;
+                            tomanRate = d.tomanRate || 50000;
+                            userNotes = d.userNotes || '';
+                            applyAll();
+                        }
+                    } catch { alert('Invalid file'); }
+                };
+                reader.readAsText(file);
+            }
+
+            function applyAll() {
+                baseBalanceInput.value = baseBalance.toFixed(2);
+                baseDisplayLabel.textContent = `Base: ${fmt(baseBalance)}`;
+                tomanToggle.checked = tomanEnabled;
+                tomanRateInput.style.display = tomanEnabled ? 'inline-block' : 'none';
+                tomanRateInput.value = tomanRate;
+                notesInput.value = userNotes;
+                renderPresets();
+                refresh();
+            }
+
+            function renderPresets() {
+                presetListContainer.innerHTML = '';
+                percentPresets.forEach((v, i) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'preset-chip';
+                    chip.textContent = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+                    chip.onclick = () => tradePercentInput.value = v;
+                    const x = document.createElement('button');
+                    x.className = 'remove-preset';
+                    x.textContent = '✕';
+                    x.onclick = e => { e.stopPropagation();
+                        percentPresets.splice(i, 1);
+                        save();
+                        renderPresets(); };
+                    chip.appendChild(x);
+                    presetListContainer.appendChild(chip);
+                });
+            }
+
+            function addPreset(val) {
+                if (isNaN(val)) return;
+                percentPresets.push(val);
+                percentPresets.sort((a, b) => a - b);
+                save();
+                renderPresets();
+            }
+
+            function refresh(anim = false) {
+                const bal = currentBalance();
+                const prof = totalProfit();
+                const st = getStats();
+                balanceDisplay.textContent = fmt(bal);
+                balanceDisplay.style.color = bal < baseBalance ? 'var(--profit-negative)' : bal > baseBalance ? 'var(--profit-positive)' : 'var(--panel-text)';
+                if (tomanEnabled) {
+                    balanceTomanDisplay.style.display = 'block';
+                    balanceTomanDisplay.textContent = fmtToman(bal * tomanRate);
+                } else balanceTomanDisplay.style.display = 'none';
+                netPnLDisplay.textContent = fmt(prof);
+                netPercentDisplay.textContent = netPercent().toFixed(2) + '%';
+                marketPercentDisplay.textContent = marketPercent().toFixed(2) + '%';
+                if (prof >= 0) {
+                    netPnLDisplay.style.color = 'var(--profit-positive)';
+                    netPercentDisplay.style.color = 'var(--profit-positive)';
+                } else {
+                    netPnLDisplay.style.color = 'var(--profit-negative)';
+                    netPercentDisplay.style.color = 'var(--profit-negative)';
+                }
+                totalTradesDisplay.textContent = st.total;
+                winsDisplay.textContent = st.wins;
+                lossesDisplay.textContent = st.losses;
+                winRateDisplay.textContent = st.winRate.toFixed(1) + '%';
+                baseDisplayLabel.textContent = `Base: ${fmt(baseBalance)}`;
+                renderTable();
+                if (anim) { balancePanel.classList.add('animate');
+                    setTimeout(() => balancePanel.classList.remove('animate'), 200); }
+                save();
+            }
+
+            function renderTable() {
+                if (!trades.length) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="empty-message">✨ No positions yet.</td></tr>';
+                    return;
+                }
+                let runBal = baseBalance;
+                let html = '';
+                [...trades].sort((a, b) => a.id - b.id).forEach((t, i) => {
+                    runBal += t.profit;
+                    const cls = t.profit >= 0 ? 'profit-positive' : 'profit-negative';
+                    html += `<tr>
+                        <td>${i+1}</td><td>${fmt(t.amount)}</td><td>${t.percent.toFixed(2)}%</td>
+                        <td><span class="leverage-badge">${t.leverage.toFixed(1)}x</span></td>
+                        <td class="${cls}">${fmt(t.profit)}</td><td><strong>${fmt(runBal)}</strong></td>
+                        <td><button class="delete-btn" data-id="${t.id}">✕</button></td>
+                    </tr>`;
+                });
+                tableBody.innerHTML = html;
+                document.querySelectorAll('.delete-btn').forEach(b => b.onclick = () => {
+                    trades = trades.filter(t => t.id !== +b.dataset.id);
+                    refresh();
+                });
+            }
+
+            function addTrade(amount, percent, leverage) {
+                trades.push({
+                    id: Date.now() + Math.random() * 10000,
+                    amount,
+                    percent,
+                    leverage,
+                    profit: amount * percent / 100 * leverage
+                });
+            }
+
+            function addBatch(amount, count, percent, leverage) {
+                for (let i = 0; i < count; i++) addTrade(amount, percent, leverage);
+                refresh(true);
+                if (autoPercentEnabled) tradeAmountInput.value = (currentBalance() * 0.6).toFixed(2);
+            }
+
+            function handleAdd() {
+                const amt = +tradeAmountInput.value;
+                const cnt = +tradeCountInput.value;
+                const pct = +tradePercentInput.value;
+                const lev = +tradeLeverageInput.value;
+                if (isNaN(amt) || amt <= 0) { alert('Amount > 0'); return; }
+                if (isNaN(cnt) || cnt < 1 || !Number.isInteger(cnt)) { alert('Count integer >= 1'); return; }
+                if (isNaN(pct)) { alert('Percentage required'); return; }
+                if (isNaN(lev) || lev <= 0) { alert('Leverage > 0'); return; }
+                addBatch(amt, cnt, pct, lev);
+            }
+
+            signToggleBtn.onclick = () => { let v = +tradePercentInput.value; if (isNaN(v)) v = 0;
+                tradePercentInput.value = -v; };
+            autoPercentToggle.onchange = function() { autoPercentEnabled = this.checked; if (autoPercentEnabled) tradeAmountInput.value = (currentBalance() * 0.6).toFixed(2); };
+            baseBalanceInput.onchange = () => { const v = +baseBalanceInput.value; if (!isNaN(v) && v >= 0) { baseBalance = v;
+                    refresh(); } else baseBalanceInput.value = baseBalance; };
+            baseBalanceInput.oninput = () => { const v = +baseBalanceInput.value; if (!isNaN(v)) baseDisplayLabel.textContent = `Base: ${fmt(v)}`; };
+            tomanToggle.onchange = function() { tomanEnabled = this.checked;
+                tomanRateInput.style.display = tomanEnabled ? 'inline-block' : 'none'; if (tomanEnabled) tomanRate = +tomanRateInput.value || 50000;
+                refresh(); };
+            tomanRateInput.oninput = () => { tomanRate = +tomanRateInput.value || 50000;
+                refresh(); };
+            updateRateBtn.onclick = fetchLiveRate;
+            resetTradesBtn.onclick = () => { if (trades.length && !confirm('Remove all trades?')) return;
+                trades = [];
+                tradeAmountInput.value = '32';
+                tradeCountInput.value = '1';
+                tradePercentInput.value = '0';
+                tradeLeverageInput.value = '1';
+                autoPercentToggle.checked = false;
+                autoPercentEnabled = false;
+                refresh(); };
+            clearAllBtn.onclick = () => { if (trades.length && confirm('Delete all?')) { trades = [];
+                    refresh(); } };
+            exportBtn.onclick = exportFile;
+            importBtn.onclick = () => importFile.click();
+            importFile.onchange = e => { if (e.target.files[0]) importFileHandler(e.target.files[0]); };
+            notesInput.oninput = () => { userNotes = notesInput.value;
+                save(); };
+            addPresetBtn.onclick = () => { const v = +newPresetInput.value; if (!isNaN(v)) { addPreset(v);
+                    newPresetInput.value = ''; } };
+            newPresetInput.onkeypress = e => { if (e.key === 'Enter') addPresetBtn.click(); };
+            tradePercentInput.onkeypress = e => { if (e.key === 'Enter') handleAdd(); };
+            addBtn.onclick = handleAdd;
+
+            async function fetchLiveRate() {
+                const btn = updateRateBtn;
+                btn.textContent = '⏳Loading...';
+                btn.disabled = true;
+                try {
+                    const resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://servatmandi.com/Entity/Summary/100000000001'));
+                    const html = await resp.text();
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                    const match = doc.body.textContent.match(/آخرین\s*[:：]?\s*([\d,]+)/i);
+                    let rial = match?.[1]?.replace(/,/g, '') || doc.body.textContent.match(/([\d,]{7,})/)?.[1]?.replace(/,/g, '');
+                    if (rial) {
+                        const v = parseInt(rial, 10);
+                        if (!isNaN(v)) {
+                            tomanRate = Math.round(v / 10);
+                            tomanRateInput.value = tomanRate;
+                            if (tomanEnabled) refresh();
+                            btn.textContent = '✓ Updated';
+                        }
+                    } else throw new Error('Rate not found');
+                } catch (e) { alert('Could not fetch rate: ' + e.message);
+                    btn.textContent = '↻ Update Rate'; } finally {
+                    btn.disabled = false;
+                    setTimeout(() => { if (btn.textContent === '✓ Updated') btn.textContent = '↻ Update Rate'; }, 2000);
+                }
+            }
+            updateRateBtn.onclick = fetchLiveRate;
+
+            // WinRate Sim
+            winRateSimBtn.onclick = () => {
+                if (!trades.length) { alert('Add trades first'); return; }
+                const st = getStats();
+                const startBal = currentBalance();
+                const history = trades.map(t => ({ percent: t.percent, leverage: t.leverage }));
+                const sims = [];
+                let bal = startBal;
+                for (let i = 0; i < 100; i++) {
+                    const s = history[Math.floor(Math.random() * history.length)];
+                    const amt = bal * 0.6;
+                    const prof = amt * (s.percent / 100) * s.leverage;
+                    bal += prof;
+                    sims.push({ trade: i + 1, amount: amt, percent: s.percent, leverage: s.leverage, profit: prof, balance: bal });
+                }
+                const finalBal = bal,
+                    totProf = finalBal - startBal;
+                const isDark = document.body.classList.contains('dark') ? 'dark' : '';
+                const w = window.open('', '_blank');
+                w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>WinRate Sim</title>
+                <style>
+                    * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin:0; padding:0; }
+                    body { background: ${isDark ? '#000' : '#f5f7fa'}; color: ${isDark ? '#f0f0f0' : '#0f172a'}; padding: 24px; }
+                    .sim-container { max-width: 1000px; margin: 0 auto; background: ${isDark ? '#0a0a0a' : '#fff'}; border:1px solid ${isDark ? '#333' : '#e2e8f0'}; border-radius:12px; padding:24px; }
+                    h1 { font-weight:600; }
+                    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 24px 0; }
+                    .stat-card { background: ${isDark ? '#111' : '#f8fafc'}; border:1px solid ${isDark ? '#333' : '#e2e8f0'}; border-radius:12px; padding:16px; }
+                    .stat-label { font-size:0.8rem; text-transform: uppercase; color: ${isDark ? '#a0a0a0' : '#64748b'}; }
+                    .stat-value { font-size:2rem; font-weight:700; }
+                    .positive { color:#4caf50; } .negative { color:#dc2626; }
+                    table { width:100%; border-collapse:collapse; margin-top:24px; font-size:0.9rem; }
+                    th { text-align:left; padding:12px 8px; background:${isDark ? '#1a1a1a' : '#f8fafc'}; border-bottom:1px solid ${isDark ? '#333' : '#e2e8f0'}; }
+                    td { padding:10px 8px; border-bottom:1px solid ${isDark ? '#222' : '#eef2f6'}; }
+                    .win { color:#4caf50; } .loss { color:#dc2626; }
+                    .btn-close { background:${isDark ? '#333' : '#e2e8f0'}; border:none; padding:10px 20px; border-radius:40px; cursor:pointer; font-weight:600; margin-top:20px; color:inherit; }
+                </style></head><body><div class="sim-container">
+                    <h1>📊 Strategy Simulation · 100 Trades (60% Rule)</h1>
+                    <p style="margin-bottom:12px;">Starts from current balance, uses 60% of balance each trade, randomly draws historical %/leverage.</p>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-label">Start Balance</div><div class="stat-value">${fmt(startBal)}</div></div>
+                        <div class="stat-card"><div class="stat-label">Final Balance</div><div class="stat-value ${finalBal>=startBal?'positive':'negative'}">${fmt(finalBal)}</div></div>
+                        <div class="stat-card"><div class="stat-label">Total P/L</div><div class="stat-value ${totProf>=0?'positive':'negative'}">${fmt(totProf)}</div></div>
+                        <div class="stat-card"><div class="stat-label">Win Rate (history)</div><div class="stat-value">${st.winRate.toFixed(1)}%</div></div>
+                    </div>
+                    <h2>📋 Simulated Trades (first 20 shown)</h2>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead><tr><th>#</th><th>Amount</th><th>%</th><th>Lev</th><th>P/L</th><th>Balance After</th></tr></thead>
+                            <tbody>
+                                ${sims.slice(0,20).map(s => `<tr>
+                                    <td>${s.trade}</td><td>${fmt(s.amount)}</td><td>${s.percent.toFixed(2)}%</td>
+                                    <td>${s.leverage.toFixed(1)}x</td><td class="${s.profit>=0?'win':'loss'}">${fmt(s.profit)}</td>
+                                    <td class="${s.balance>=startBal?'win':'loss'}"><strong>${fmt(s.balance)}</strong></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table>
+                        <p style="margin-top:8px;">… and 80 more (full list omitted).</p>
+                    </div>
+                    <div class="note"><p>⚡ Simulation based on your actual trade history (percent & leverage samples). 60% of balance rule applied.</p></div>
+                    <button class="btn-close" onclick="window.close()">Close Tab</button>
+                </div></body></html>`);
+                w.document.close();
+            };
+
+            // Trade Chart
+            chartBtn.onclick = () => {
+                if (!trades.length) { alert('No trades to chart'); return; }
+                const sorted = [...trades].sort((a, b) => a.id - b.id);
+                const points = [];
+                let bal = baseBalance;
+                points.push({ trade: 0, balance: bal });
+                sorted.forEach((t, i) => {
+                    bal += t.profit;
+                    points.push({ trade: i + 1, balance: bal });
+                });
+                const isDark = document.body.classList.contains('dark');
+                const w = window.open('', '_blank');
+                w.document.write(`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Trade Balance Chart</title>
+<style>
+  * { margin:0; padding:0; font-family: 'Inter', sans-serif; }
+  body { background: ${isDark?'#000':'#f5f7fa'}; color: ${isDark?'#f0f0f0':'#0f172a'}; padding: 24px; }
+  .chart-container { max-width: 1000px; margin: 0 auto; background: ${isDark?'#0a0a0a':'#fff'}; border:1px solid ${isDark?'#333':'#e2e8f0'}; border-radius:12px; padding:24px; }
+  canvas { width: 100%; height: 400px; display: block; cursor: grab; }
+  .tooltip { position: fixed; background: ${isDark?'#222':'white'}; border:1px solid ${isDark?'#444':'#ccc'}; padding: 8px 12px; border-radius:8px; font-size:0.85rem; pointer-events:none; display:none; z-index:1000; }
+  .btn-close { background:${isDark?'#333':'#e2e8f0'}; border:none; padding:10px 20px; border-radius:40px; cursor:pointer; font-weight:600; margin-top:20px; color:inherit; }
+</style></head>
+<body>
+<div class="chart-container">
+  <h2 style="margin-bottom:12px;">Balance After Each Trade</h2>
+  <canvas id="tradeCanvas" width="800" height="400"></canvas>
+  <p style="margin-top:8px;">🖱️ Scroll to zoom (X & Y) | Drag to pan | Hover for details</p>
+  <button class="btn-close" onclick="window.close()">Close</button>
+</div>
+<div class="tooltip" id="tooltip"></div>
+<script>
+  (function() {
+    const canvas = document.getElementById('tradeCanvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+    const points = ${JSON.stringify(points)};
+    const isDark = ${isDark};
+
+    let width, height, pad = 50;
+    let scaleX = 1, scaleY = 1;
+    let offsetX = 0, offsetY = 0;
+    let dragging = false, lastX, lastY;
+
+    function resize() {
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+    window.addEventListener('resize', () => { resize(); draw(); });
+
+    const allBalances = [${baseBalance}, ...points.map(p => p.balance)];
+    const yMin = Math.min(...allBalances);
+    const yMax = Math.max(...allBalances);
+    const yRange = yMax - yMin || 1;
+    const yLow = yMin - yRange * 0.1;
+    const yHigh = yMax + yRange * 0.1;
+
+    function toScreenX(tradeNum) {
+      const maxTrade = points.length - 1;
+      const norm = maxTrade > 0 ? tradeNum / maxTrade : 0;
+      return pad + (width - 2*pad) * (norm * scaleX + offsetX);
+    }
+
+    function toScreenY(balance) {
+      const norm = (balance - yLow) / (yHigh - yLow);
+      return height - pad - (height - 2*pad) * (norm * scaleY + offsetY);
+    }
+
+    function toWorldY(screenY) {
+      const norm = (height - pad - screenY) / (height - 2*pad);
+      return yLow + (yHigh - yLow) * ((norm - offsetY) / scaleY);
+    }
+
+    function draw() {
+      ctx.fillStyle = isDark ? '#0a0a0a' : '#fff';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = isDark ? '#333' : '#e2e8f0';
+      ctx.lineWidth = 1;
+      const steps = 4;
+      for (let i = 0; i <= steps; i++) {
+        const yVal = yLow + (i / steps) * (yHigh - yLow);
+        const y = toScreenY(yVal);
+        if (y >= pad && y <= height - pad) {
+          ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - pad, y); ctx.stroke();
+          ctx.fillStyle = isDark ? '#888' : '#64748b';
+          ctx.font = '10px Inter';
+          ctx.textAlign = 'right';
+          ctx.fillText('$' + yVal.toFixed(0), pad - 5, y + 3);
+        }
+      }
+
+      const axisY = height - pad;
+      ctx.strokeStyle = isDark ? '#aaa' : '#666';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(pad, axisY); ctx.lineTo(width - pad, axisY); ctx.stroke();
+      const bottomBalance = toWorldY(axisY);
+      ctx.fillStyle = isDark ? '#888' : '#64748b';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'right';
+      ctx.fillText('$' + bottomBalance.toFixed(0), pad - 5, axisY - 4);
+
+      ctx.fillStyle = isDark ? '#888' : '#64748b';
+      ctx.font = '10px Inter';
+      ctx.textAlign = 'center';
+      const maxTrade = points.length - 1;
+      const step = Math.max(1, Math.floor(maxTrade / 10));
+      for (let i = 0; i <= maxTrade; i += step) {
+        const x = toScreenX(i);
+        if (x >= pad && x <= width - pad) {
+          ctx.fillText('#' + i, x, axisY + 16);
+        }
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      let first = true;
+      for (const p of points) {
+        const x = toScreenX(p.trade);
+        const y = toScreenY(p.balance);
+        if (x >= pad && x <= width - pad) {
+          if (first) { ctx.moveTo(x, y);
+            first = false; } else ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+
+      for (const p of points) {
+        const x = toScreenX(p.trade);
+        const y = toScreenY(p.balance);
+        if (x >= pad && x <= width - pad) {
+          ctx.fillStyle = '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(x, y, 3, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    }
+
+    canvas.addEventListener('mousedown', e => {
+      dragging = true;
+      lastX = e.offsetX;
+      lastY = e.offsetY;
+      canvas.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      canvas.style.cursor = 'grab';
+    });
+    canvas.addEventListener('mousemove', e => {
+      if (dragging) {
+        const dx = e.offsetX - lastX;
+        const dy = e.offsetY - lastY;
+        offsetX += dx / (width - 2*pad) / scaleX;
+        offsetY -= dy / (height - 2*pad) / scaleY;
+        lastX = e.offsetX;
+        lastY = e.offsetY;
+        draw();
+      } else {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        let closest = null,
+            minDist = 15;
+        for (const p of points) {
+          const x = toScreenX(p.trade);
+          const y = toScreenY(p.balance);
+          const dist = Math.hypot(mouseX - x, (e.clientY - rect.top) - y);
+          if (dist < minDist) { minDist = dist;
+            closest = { p, x, y }; }
+        }
+        if (closest) {
+          tooltip.style.display = 'block';
+          tooltip.style.left = (closest.x + 10) + 'px';
+          tooltip.style.top = (closest.y - 10) + 'px';
+          tooltip.innerHTML = \`Trade <strong>#\${closest.p.trade}</strong><br>Balance: \${'$' + closest.p.balance.toFixed(2)}\`;
+        } else tooltip.style.display = 'none';
+      }
+    });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = 0.1;
+      const delta = e.deltaY > 0 ? -factor : factor;
+      scaleX = Math.max(0.5, Math.min(5, scaleX + delta));
+      scaleY = Math.max(0.5, Math.min(5, scaleY + delta));
+      draw();
+    });
+
+    resize();
+    draw();
+  })();
+<\/script></body></html>`);
+                w.document.close();
+            };
+
+            function initTheme() {
+                if (localStorage.getItem('futuresCalcTheme') === 'dark') document.body.classList.add('dark');
+                themeToggle.onclick = () => {
+                    document.body.classList.toggle('dark');
+                    localStorage.setItem('futuresCalcTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
+                };
+            }
+
+            load();
+            baseBalanceInput.value = baseBalance.toFixed(2);
+            baseDisplayLabel.textContent = `Base: ${fmt(baseBalance)}`;
+            tomanToggle.checked = tomanEnabled;
+            tomanRateInput.style.display = tomanEnabled ? 'inline-block' : 'none';
+            tomanRateInput.value = tomanRate;
+            notesInput.value = userNotes;
+            renderPresets();
+            initTheme();
+            refresh();
+        })();
+    </script>
+</body>
+</html>
