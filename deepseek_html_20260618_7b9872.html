@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Crypto Futures · Phone Mode</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0a;
+            --surface-hover: #1a1a1a;
+            --border: #333333;
+            --text-main: #d1d4dc;
+            --text-muted: #787b86;
+            --up: #26a69a;
+            --down: #ef5350;
+            --primary: #f5b300;
+            --primary-hover: #d19a00;
+            --input-bg: #1a1a1a;
+            --radius: 12px;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text-main); font-size: 15px; padding: 12px 12px 20px; min-height: 100vh; overflow-x: hidden; }
+        .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+        .section-header { font-weight: 600; font-size: 16px; margin-bottom: 12px; color: var(--primary); }
+        label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; display: block; margin-bottom: 4px; }
+        input, select { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-main); padding: 12px 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; outline: none; font-variant-numeric: tabular-nums; }
+        input:focus, select:focus { border-color: var(--primary); }
+        .row { display: flex; gap: 8px; }
+        .row > * { flex: 1; }
+        .btn { background: var(--surface-hover); border: 1px solid var(--border); color: var(--text-main); padding: 14px; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; text-align: center; transition: 0.2s; }
+        .btn:hover { background: var(--border); }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: #000; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-sm { padding: 10px; font-size: 13px; }
+        .preset-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .preset-chip { background: var(--input-bg); border: 1px solid var(--border); padding: 6px 10px; border-radius: 20px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .preset-chip span { color: var(--down); font-weight: bold; }
+        .add-preset { display: flex; gap: 6px; }
+        .add-preset input { flex: 1; margin-bottom: 0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .stat-card { background: var(--input-bg); border: 1px solid var(--border); padding: 12px 6px; border-radius: var(--radius); text-align: center; }
+        .stat-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+        .stat-card .val { font-size: 18px; font-weight: 700; }
+        .val.up { color: var(--up); }
+        .val.down { color: var(--down); }
+        .live-price { background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; text-align: center; margin-bottom: 10px; }
+        .live-price .price { font-size: 22px; font-weight: 700; color: var(--primary); }
+        .chart-container { width: 100%; height: 300px; margin-bottom: 12px; }
+        .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; text-align: right; }
+        th, td { padding: 10px 6px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        th { color: var(--text-muted); font-weight: 500; font-size: 11px; text-transform: uppercase; background: var(--surface-hover); }
+        tr:hover { background: var(--surface-hover); }
+        .date-input { background: transparent; border: 1px solid transparent; color: var(--text-muted); font-size: 12px; width: 140px; }
+        .delete-btn { background: transparent; border: none; color: var(--text-muted); font-size: 18px; padding: 4px 8px; border-radius: 4px; }
+        .delete-btn:hover { background: rgba(239,83,80,0.1); color: var(--down); }
+        .badge { background: rgba(245,179,0,0.1); border: 1px solid var(--primary); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .checkbox-row { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px; margin-bottom: 10px; }
+        .tooltip { position: absolute; background: var(--surface); border: 1px solid var(--border); padding: 6px 10px; border-radius: 4px; font-size: 12px; pointer-events: none; display: none; z-index: 100; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+    <!-- Live Price & Quick Trade -->
+    <div class="live-price">
+        <div style="font-size:12px; color:var(--text-muted);">LIVE BTC PRICE (Binance)</div>
+        <div class="price" id="btcPriceDisplay">Loading…</div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn btn-primary" id="quickLongBtn" style="flex:1;">🟢 Quick Long</button>
+            <button class="btn" id="quickShortBtn" style="flex:1; background: var(--down); color: white; border-color: var(--down);">🔴 Quick Short</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Tap to log a trade at current price.</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card"><div class="label">Balance</div><div class="val" id="balanceDisplay">$64.00</div></div>
+        <div class="stat-card"><div class="label">Net P&L</div><div class="val" id="netPnLDisplay">$0.00</div></div>
+        <div class="stat-card"><div class="label">Win Rate</div><div class="val" id="winRateDisplay">0%</div></div>
+    </div>
+
+    <!-- TradingView Chart (updated widget) -->
+    <div class="section" style="padding:0; overflow:hidden;">
+        <div class="tradingview-widget-container" style="height:320px; width:100%;">
+          <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+          <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/symbols/BTCUSDT/?exchange=BINANCE" rel="noopener nofollow" target="_blank"><span class="blue-text">BTCUSDT price</span></a><span class="trademark"> by TradingView</span></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+          {
+          "allow_symbol_change": true,
+          "calendar": false,
+          "details": false,
+          "hide_side_toolbar": false,
+          "hide_top_toolbar": false,
+          "hide_legend": false,
+          "hide_volume": true,
+          "hotlist": false,
+          "interval": "5",
+          "locale": "en",
+          "save_image": true,
+          "style": "1",
+          "symbol": "BINANCE:BTCUSDT",
+          "theme": "dark",
+          "timezone": "Asia/Tehran",
+          "backgroundColor": "#0F0F0F",
+          "gridColor": "rgba(242, 242, 242, 0.06)",
+          "watchlist": [],
+          "withdateranges": false,
+          "compareSymbols": [],
+          "show_popup_button": true,
+          "popup_height": "650",
+          "popup_width": "1000",
+          "studies": [],
+          "autosize": true
+        }
+          </script>
+        </div>
+    </div>
+
+    <!-- Parameters -->
+    <div class="section">
+        <div class="section-header">⚙️ Trade Parameters</div>
+        <label>Starting Base ($)</label>
+        <input type="number" id="baseBalanceInput" value="64.00" step="0.01">
+        
+        <label>Trade Amount ($)</label>
+        <input type="number" id="tradeAmount" value="32" step="0.01">
+        <div class="checkbox-row">
+            <input type="checkbox" id="riskToggle"> Use Risk % of Balance
+        </div>
+        <div id="riskGroup" style="display:none;">
+            <label>Risk %</label>
+            <input type="number" id="riskPercent" value="60" step="0.1">
+        </div>
+        
+        <label>Gain / Loss (%)</label>
+        <div style="display:flex; gap:4px;">
+            <input type="number" id="tradePercent" value="0" step="0.01" placeholder="0%" style="flex:1;">
+            <button class="btn btn-sm" id="signToggleBtn">+/-</button>
+        </div>
+        <div class="preset-list" id="presetListContainer"></div>
+        <div class="add-preset">
+            <input type="number" id="newPresetInput" step="0.01" placeholder="Add % preset">
+            <button class="btn btn-sm" id="addPresetBtn">Add</button>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>Leverage</label>
+                <input type="number" id="tradeLeverage" value="1" step="0.1">
+            </div>
+            <div>
+                <label>Positions</label>
+                <input type="number" id="tradeCount" value="1" step="1">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="addTradeBtn" style="margin-top:10px;">➕ Commit Execution</button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+            <button class="btn btn-sm" id="resetTradesBtn">Reset</button>
+            <button class="btn btn-sm" id="exportBtn">Export</button>
+            <button class="btn btn-sm" id="importBtn">Import</button>
+            <button class="btn btn-sm" id="winRateSimBtn">Simulate</button>
+        </div>
+        <input type="file" id="importFile" style="display:none;" accept=".json">
+        <input type="text" id="exportFilenameInput" value="crypto_ledger.json" style="font-size:12px; text-align:center; padding:8px; margin-top:6px;">
+    </div>
+
+    <!-- Trade History Table -->
+    <div class="section">
+        <div class="section-header">📋 Trade History</div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>%</th><th>Lev</th><th>P/L</th><th>Bal</th><th></th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Custom Balance Chart (optional, keep if desired) -->
+    <div class="section" style="padding:0; overflow:hidden; position:relative;">
+        <div id="chartContainer" style="width:100%; height:250px;">
+            <canvas id="balanceChart"></canvas>
+            <div class="tooltip" id="chartTooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const STORAGE_KEY = 'futuresCalcData_v2';
+            let baseBalance = 64;
+            let trades = [];
+            let tomanEnabled = false, tomanRate = 50000;
+            let riskMode = false;
+            let riskPercentage = 60;
+            let percentPresets = [];
+            let userNotes = '';
+
+            const fmt = v => '$' + v.toFixed(2);
+            const fmtToman = v => new Intl.NumberFormat('en-US').format(Math.round(v)) + ' Toman';
+            const getStats = () => {
+                const wins = trades.filter(t => t.profit > 0).length;
+                const losses = trades.filter(t => t.profit < 0).length;
+                const total = trades.length;
+                return { total, wins, losses, winRate: total ? (wins / total) * 100 : 0 };
+            };
+
+            const balanceDisplay = document.getElementById('balanceDisplay');
+            const tableBody = document.getElementById('tableBody');
+            const baseBalanceInput = document.getElementById('baseBalanceInput');
+            const tradeAmountInput = document.getElementById('tradeAmount');
+            const tradeCountInput = document.getElementById('tradeCount');
+            const tradePercentInput = document.getElementById('tradePercent');
+            const tradeLeverageInput = document.getElementById('tradeLeverage');
+            const signToggleBtn = document.getElementById('signToggleBtn');
+            const addBtn = document.getElementById('addTradeBtn');
+            const resetTradesBtn = document.getElementById('resetTradesBtn');
+            const netPnLDisplay = document.getElementById('netPnLDisplay');
+            const winRateDisplay = document.getElementById('winRateDisplay');
+            const winRateSimBtn = document.getElementById('winRateSimBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const importFile = document.getElementById('importFile');
+            const riskToggle = document.getElementById('riskToggle');
+            const riskGroup = document.getElementById('riskGroup');
+            const riskPercentInput = document.getElementById('riskPercent');
+            const presetListContainer = document.getElementById('presetListContainer');
+            const newPresetInput = document.getElementById('newPresetInput');
+            const addPresetBtn = document.getElementById('addPresetBtn');
+            const exportFilenameInput = document.getElementById('exportFilenameInput');
+            const btcPriceDisplay = document.getElementById('btcPriceDisplay');
+            const quickLongBtn = document.getElementById('quickLongBtn');
+            const quickShortBtn = document.getElementById('quickShortBtn');
+
+            // Custom chart
+            const canvas = document.getElementById('balanceChart');
+            const ctx = canvas.getContext('2d');
+            const tooltip = document.getElementById('chartTooltip');
+            const chartContainer = document.getElementById('chartContainer');
+
+            let scaleX = 1, scaleY = 1;
+            let offsetX = 0, offsetY = 0;
+            let dragging = false, lastMouseX, lastMouseY;
+
+            function resizeCanvas() {
+                const rect = chartContainer.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                drawChart();
+            }
+            window.addEventListener('resize', resizeCanvas);
+            new ResizeObserver(resizeCanvas).observe(chartContainer);
+
+            function getChartPoints() {
+                if (trades.length === 0) return [{ x: 0, y: baseBalance, label: 'Start' }];
+                const sorted = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const points = [{ x: 0, y: baseBalance, label: 'Start' }];
+                let runBal = baseBalance;
+                sorted.forEach((t, i) => {
+                    runBal += t.profit;
+                    points.push({ x: i + 1, y: runBal, label: `Trade ${i+1}` });
+                });
+                return points;
+            }
+
+            function drawChart() {
+                const width = canvas.width, height = canvas.height;
+                if (width === 0 || height === 0) return;
+                ctx.clearRect(0, 0, width, height);
+                const bgColor = '#0a0a0a';
+                const textColor = '#d1d4dc';
+                const gridColor = '#2a2e39';
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, width, height);
+
+                const points = getChartPoints();
+                const allY = points.map(p => p.y);
+                const yMin = Math.min(...allY);
+                const yMax = Math.max(...allY);
+                const yRange = yMax - yMin || 1;
+                const yPad = yRange * 0.1;
+                const yLow = yMin - yPad;
+                const yHigh = yMax + yPad;
+
+                const pad = 40;
+                const chartW = width - pad * 2;
+                const chartH = height - pad * 2;
+
+                function toScreenX(x) {
+                    const maxX = points.length - 1;
+                    const norm = maxX > 0 ? x / maxX : 0;
+                    return pad + chartW * (norm * scaleX + offsetX);
+                }
+                function toScreenY(y) {
+                    const norm = (y - yLow) / (yHigh - yLow);
+                    return height - pad - chartH * (norm * scaleY + offsetY);
+                }
+                function toWorldY(screenY) {
+                    const norm = (height - pad - screenY) / chartH;
+                    return yLow + (yHigh - yLow) * ((norm - offsetY) / scaleY);
+                }
+
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const yVal = yLow + (i / 4) * (yHigh - yLow);
+                    const y = toScreenY(yVal);
+                    if (y >= pad && y <= height - pad) {
+                        ctx.beginPath();
+                        ctx.moveTo(pad, y);
+                        ctx.lineTo(width - pad, y);
+                        ctx.stroke();
+                        ctx.fillStyle = textColor;
+                        ctx.font = '10px Inter';
+                        ctx.textAlign = 'right';
+                        ctx.fillText('$' + yVal.toFixed(0), pad - 5, y + 3);
+                    }
+                }
+
+                const axisY = height - pad;
+                ctx.strokeStyle = gridColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(pad, axisY);
+                ctx.lineTo(width - pad, axisY);
+                ctx.stroke();
+                ctx.fillStyle = textColor;
+                ctx.font = '10px Inter';
+                ctx.textAlign = 'right';
+                ctx.fillText('$' + toWorldY(axisY).toFixed(0), pad - 5, axisY - 4);
+
+                ctx.textAlign = 'center';
+                const maxX = points.length - 1;
+                const step = Math.max(1, Math.floor(maxX / 10));
+                for (let i = 0; i <= maxX; i += step) {
+                    const x = toScreenX(i);
+                    if (x >= pad && x <= width - pad) {
+                        ctx.fillText('#' + i, x, axisY + 16);
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#f5b300';
+                ctx.lineWidth = 2;
+                let first = true;
+                for (let i = 0; i < points.length; i++) {
+                    const x = toScreenX(points[i].x);
+                    const y = toScreenY(points[i].y);
+                    if (x >= pad && x <= width - pad) {
+                        if (first) { ctx.moveTo(x, y); first = false; }
+                        else ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+
+                for (const p of points) {
+                    const x = toScreenX(p.x);
+                    const y = toScreenY(p.y);
+                    if (x >= pad && x <= width - pad) {
+                        ctx.fillStyle = '#f5b300';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            canvas.addEventListener('mousedown', e => {
+                dragging = true;
+                lastMouseX = e.offsetX;
+                lastMouseY = e.offsetY;
+                canvas.style.cursor = 'grabbing';
+            });
+            window.addEventListener('mouseup', () => { dragging = false; canvas.style.cursor = 'grab'; });
+            canvas.addEventListener('mousemove', e => {
+                if (dragging) {
+                    const dx = e.offsetX - lastMouseX;
+                    const dy = e.offsetY - lastMouseY;
+                    const rect = canvas.getBoundingClientRect();
+                    const chartW = rect.width - 80;
+                    const chartH = rect.height - 80;
+                    offsetX += dx / chartW / scaleX;
+                    offsetY -= dy / chartH / scaleY;
+                    lastMouseX = e.offsetX;
+                    lastMouseY = e.offsetY;
+                    drawChart();
+                } else {
+                    const points = getChartPoints();
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+                    let closest = null, minDist = 15;
+                    for (const p of points) {
+                        const x = (() => { const maxX = points.length - 1; const norm = maxX > 0 ? p.x / maxX : 0; return 40 + (rect.width - 80) * (norm * scaleX + offsetX); })();
+                        const y = (() => { const allY = points.map(p=>p.y); const yMin = Math.min(...allY); const yMax = Math.max(...allY); const yRange = yMax - yMin || 1; const yLow = yMin - yRange*0.1; const yHigh = yMax + yRange*0.1; const norm = (p.y - yLow) / (yHigh - yLow); return rect.height - 40 - (rect.height - 80) * (norm * scaleY + offsetY); })();
+                        const dist = Math.hypot(mx - x, my - y);
+                        if (dist < minDist) { minDist = dist; closest = { p, x, y }; }
+                    }
+                    if (closest) {
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = (closest.x + 10) + 'px';
+                        tooltip.style.top = (closest.y - 10) + 'px';
+                        tooltip.innerHTML = `<strong>${closest.p.label}</strong><br>Balance: $${closest.p.y.toFixed(2)}`;
+                    } else {
+                        tooltip.style.display = 'none';
+                    }
+                }
+            });
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                const factor = 0.1;
+                const delta = e.deltaY > 0 ? -factor : factor;
+                scaleX = Math.max(0.5, Math.min(5, scaleX + delta));
+                scaleY = Math.max(0.5, Math.min(5, scaleY + delta));
+                drawChart();
+            });
+
+            function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ baseBalance, trades, percentPresets, tomanEnabled, tomanRate, riskMode, riskPercentage, userNotes })); }
+            function load() {
+                const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('futuresCalcData');
+                if (raw) {
+                    try {
+                        const d = JSON.parse(raw);
+                        baseBalance = d.baseBalance || 64;
+                        trades = d.trades || [];
+                        percentPresets = d.percentPresets || [];
+                        tomanEnabled = d.tomanEnabled || false;
+                        tomanRate = d.tomanRate || 50000;
+                        riskMode = d.riskMode || false;
+                        riskPercentage = d.riskPercentage || 60;
+                        userNotes = d.userNotes || '';
+                        trades.forEach((t, i) => {
+                            if (!t.date) {
+                                const d = new Date(Date.now() - (trades.length - i) * 60000);
+                                t.date = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            }
+                        });
+                    } catch {}
+                }
+            }
+
+            function renderPresets() {
+                presetListContainer.innerHTML = '';
+                percentPresets.forEach((v, i) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'preset-chip';
+                    chip.innerHTML = `${v > 0 ? '+' : ''}${v}% <span data-idx="${i}">✕</span>`;
+                    chip.onclick = (e) => {
+                        if (e.target.tagName === 'SPAN') { percentPresets.splice(i, 1); save(); renderPresets(); }
+                        else { tradePercentInput.value = v; }
+                    };
+                    presetListContainer.appendChild(chip);
+                });
+            }
+
+            window.updateTradeDate = function(id, newDate) {
+                const t = trades.find(x => x.id === id);
+                if (t) { t.date = newDate; refresh(); }
+            };
+            window.deleteTrade = function(id) { trades = trades.filter(t => t.id !== id); refresh(); };
+
+            function calcRiskTradeAmount() {
+                if (!riskMode) return;
+                const bal = trades.reduce((s, t) => s + t.profit, baseBalance);
+                const riskPct = parseFloat(riskPercentInput.value) || riskPercentage;
+                tradeAmountInput.value = (bal * (riskPct / 100)).toFixed(2);
+            }
+
+            // Live BTC Price
+            async function fetchBTCPrice() {
+                try {
+                    const resp = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+                    const data = await resp.json();
+                    btcPriceDisplay.textContent = '$' + parseFloat(data.price).toFixed(2);
+                } catch {
+                    btcPriceDisplay.textContent = 'Error';
+                }
+            }
+            fetchBTCPrice();
+            setInterval(fetchBTCPrice, 10000);
+
+            function addQuickTrade(direction) {
+                const currentPrice = parseFloat(btcPriceDisplay.textContent.replace('$',''));
+                if (isNaN(currentPrice)) return alert('Price not available');
+
+                let amt;
+                if (riskMode) {
+                    const bal = trades.reduce((s, t) => s + t.profit, baseBalance);
+                    const riskPct = parseFloat(riskPercentInput.value) || riskPercentage;
+                    amt = bal * (riskPct / 100);
+                } else {
+                    amt = parseFloat(tradeAmountInput.value) || 32;
+                }
+
+                const d = new Date();
+                const localISO = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+                trades.push({
+                    id: Date.now() + Math.random() * 10000,
+                    date: localISO,
+                    amount: amt,
+                    percent: 0,
+                    leverage: parseFloat(tradeLeverageInput.value) || 1,
+                    profit: 0,
+                    direction: direction,
+                    entryPrice: currentPrice
+                });
+                refresh();
+            }
+
+            quickLongBtn.onclick = () => addQuickTrade('long');
+            quickShortBtn.onclick = () => addQuickTrade('short');
+
+            function refresh() {
+                const sorted = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                let runBal = baseBalance;
+                sorted.forEach((t) => {
+                    runBal += t.profit;
+                    t.runBal = runBal;
+                });
+
+                const displayTrades = [...sorted].reverse();
+                tableBody.innerHTML = displayTrades.length === 0
+                    ? '<tr><td colspan="9" style="text-align:center; padding: 30px; color:var(--text-muted);">No trades yet</td></tr>'
+                    : '';
+                displayTrades.forEach((t) => {
+                    const originalIndex = sorted.indexOf(t) + 1;
+                    const dirBadge = t.direction === 'long' ? 
+                        '<span style="color: var(--up);">▲ Long</span>' : 
+                        (t.direction === 'short' ? '<span style="color: var(--down);">▼ Short</span>' : '-');
+                    tableBody.innerHTML += `<tr>
+                        <td style="text-align:left;">${originalIndex}</td>
+                        <td style="text-align:left;"><input type="datetime-local" class="date-input" value="${t.date}" onchange="updateTradeDate(${t.id}, this.value)"></td>
+                        <td>${dirBadge}</td>
+                        <td>${fmt(t.amount)}</td>
+                        <td>${t.percent.toFixed(2)}%</td>
+                        <td><span class="badge">${t.leverage.toFixed(1)}x</span></td>
+                        <td class="${t.profit >= 0 ? 'up' : 'down'}">${t.profit >= 0 ? '+' : ''}${fmt(t.profit)}</td>
+                        <td>${fmt(t.runBal)}</td>
+                        <td><button class="delete-btn" onclick="deleteTrade(${t.id})">✕</button></td>
+                    </tr>`;
+                });
+
+                const st = getStats();
+                balanceDisplay.textContent = fmt(runBal);
+                balanceDisplay.className = 'val ' + (runBal >= baseBalance ? 'up' : 'down');
+                netPnLDisplay.textContent = fmt(runBal - baseBalance);
+                netPnLDisplay.className = 'val ' + ((runBal - baseBalance) >= 0 ? 'up' : 'down');
+                winRateDisplay.textContent = st.winRate.toFixed(1) + '%';
+
+                if (riskMode) calcRiskTradeAmount();
+                save();
+                drawChart();
+            }
+
+            function handleAdd() {
+                const amt = +tradeAmountInput.value;
+                const cnt = +tradeCountInput.value;
+                const pct = +tradePercentInput.value;
+                const lev = +tradeLeverageInput.value;
+                if (!amt || !cnt || isNaN(pct) || !lev) return alert('Check inputs');
+                const d = new Date();
+                const localISO = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                for (let i = 0; i < cnt; i++) {
+                    trades.push({
+                        id: Date.now() + Math.random() * 10000,
+                        date: localISO,
+                        amount: amt, percent: pct, leverage: lev,
+                        profit: amt * pct / 100 * lev
+                    });
+                }
+                refresh();
+            }
+
+            signToggleBtn.onclick = () => { tradePercentInput.value = -parseFloat(tradePercentInput.value || 0); };
+            riskToggle.onchange = function() {
+                riskMode = this.checked;
+                riskGroup.style.display = riskMode ? 'block' : 'none';
+                tradeAmountInput.readOnly = riskMode;
+                if (riskMode) calcRiskTradeAmount();
+            };
+            riskPercentInput.addEventListener('input', () => {
+                riskPercentage = parseFloat(riskPercentInput.value) || 60;
+                if (riskMode) calcRiskTradeAmount();
+            });
+            baseBalanceInput.onchange = () => {
+                const newBase = +baseBalanceInput.value;
+                if (!isNaN(newBase) && newBase >= 0) { baseBalance = newBase; refresh(); }
+            };
+            addBtn.onclick = handleAdd;
+            resetTradesBtn.onclick = () => { if (trades.length && confirm('Remove all?')) { trades = []; refresh(); } };
+            addPresetBtn.onclick = () => { const v = +newPresetInput.value; if (v) { percentPresets.push(v); percentPresets.sort((a, b) => a - b); renderPresets(); save(); newPresetInput.value = ''; } };
+            exportBtn.onclick = () => {
+                const blob = new Blob([JSON.stringify({ baseBalance, trades, percentPresets, tomanEnabled, tomanRate, riskMode, riskPercentage, userNotes }, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = exportFilenameInput.value || 'crypto.json'; a.click();
+            };
+            importBtn.onclick = () => importFile.click();
+            importFile.onchange = e => {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        if (d.trades) {
+                            baseBalance = d.baseBalance || 64;
+                            trades = d.trades;
+                            percentPresets = d.percentPresets || [];
+                            tomanEnabled = d.tomanEnabled || false;
+                            tomanRate = d.tomanRate || 50000;
+                            riskMode = d.riskMode || false;
+                            riskPercentage = d.riskPercentage || 60;
+                            userNotes = d.userNotes || '';
+                        }
+                        baseBalanceInput.value = baseBalance;
+                        riskToggle.checked = riskMode; riskGroup.style.display = riskMode ? 'block' : 'none';
+                        tradeAmountInput.readOnly = riskMode;
+                        riskPercentInput.value = riskPercentage;
+                        renderPresets();
+                        refresh();
+                    } catch { alert('Invalid JSON'); }
+                };
+                if (e.target.files[0]) reader.readAsText(e.target.files[0]);
+            };
+
+            winRateSimBtn.onclick = () => {
+                if (!trades.length) return alert('Add trades first');
+                const st = getStats(); const currentBal = trades.reduce((s, t) => s + t.profit, baseBalance);
+                const history = trades.map(t => ({ percent: t.percent, leverage: t.leverage }));
+                let bal = currentBal, sims = [];
+                for (let i = 0; i < 100; i++) {
+                    const s = history[Math.floor(Math.random() * history.length)];
+                    const amt = bal * 0.6; const prof = amt * (s.percent / 100) * s.leverage; bal += prof;
+                    sims.push({ trade: i + 1, amount: amt, percent: s.percent, leverage: s.leverage, profit: prof, balance: bal });
+                }
+                const w = window.open('', '_blank');
+                w.document.write(`<!DOCTYPE html><html><head><style>body{font-family:sans-serif; background:#0b0e14; color:#d1d4dc; padding:20px;} table{width:100%; border-collapse:collapse;} td,th{padding:8px; border-bottom:1px solid #2a2e39;} .up{color:#26a69a;} .down{color:#ef5350;}</style></head><body>
+                <h2>📊 Simulation (100 Trades)</h2>
+                <p>Start: ${fmt(currentBal)} | Final: <span class="${bal>=currentBal?'up':'down'}">${fmt(bal)}</span> | WinRate: ${st.winRate.toFixed(1)}%</p>
+                <table>${sims.slice(0,30).map(s => `<tr><td>${s.trade}</td><td>${fmt(s.amount)}</td><td>${s.percent}%</td><td>${s.leverage}x</td><td class="${s.profit>=0?'up':'down'}">${fmt(s.profit)}</td><td>${fmt(s.balance)}</td></tr>`).join('')}</table></body></html>`);
+                w.document.close();
+            };
+
+            load();
+            baseBalanceInput.value = baseBalance;
+            riskToggle.checked = riskMode; riskGroup.style.display = riskMode ? 'block' : 'none';
+            tradeAmountInput.readOnly = riskMode;
+            riskPercentInput.value = riskPercentage;
+            renderPresets();
+            resizeCanvas();
+            refresh();
+        })();
+    </script>
+</body>
+</html>
